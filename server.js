@@ -116,12 +116,6 @@ app.all('/', function (req, res) {
         return;
     }
 
-    const context = {
-        request: req,
-        response: res
-        // TODO: context should also have: URL template params, query string
-    };
-
     function callback(status, body, headers) {
         if (!status)
             return;
@@ -146,10 +140,12 @@ app.all('/', function (req, res) {
         if (userFunction.length === 0) {
             result = Promise.resolve(userFunction())
         } else {
-            result = Promise.resolve(userFunction(context))
+            result = Promise.resolve(userFunction({request: req, response: res}))
         }
-        result.then(function({status, body, headers}) {
-            callback(status, body, headers);
+        result.then(res => {
+            if (res && res.status && res.body) {
+                callback(res.status, res.body, res.headers)
+            }
         }).catch(function(err) {
             console.log(`Function error: ${err}`);
             callback(500, "Internal server error");
